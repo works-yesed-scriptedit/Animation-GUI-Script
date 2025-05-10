@@ -1,4 +1,4 @@
-print("起動した")
+print("起動したよ。"game.Players.LocalPlayer.Name)
 -- Animation GUI（優先順位ドロップダウン付き / KRNL対応）  
 
 -- GUIの親をCoreGuiに設定  
