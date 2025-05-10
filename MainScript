@@ -89,12 +89,12 @@ local priorityMap = {
 -- ドロップダウンリスト（右側表示）  
 local dropdownFrame = Instance.new("Frame")  
 dropdownFrame.Size = UDim2.new(0, 100, 0, 25 * #priorityOrder)  
-dropdownFrame.Position = UDim2.new(0, 10 + dropdown.AbsoluteSize.X + 10, 0, 70) -- ボタンの右  
+dropdownFrame.Position = UDim2.new(0, 10 + dropdown.AbsoluteSize.X + 10, 0, 70)  
 dropdownFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)  
 dropdownFrame.Visible = false  
 dropdownFrame.ClipsDescendants = true  
 Instance.new("UICorner", dropdownFrame).CornerRadius = UDim.new(0, 6)  
-dropdownFrame.Parent = frame -- またはguiにしたい場合は`gui`に  
+dropdownFrame.Parent = frame  
 
 for i, name in ipairs(priorityOrder) do  
 	local option = Instance.new("TextButton", dropdownFrame)  
@@ -167,7 +167,7 @@ button.MouseButton1Down:Connect(function()
 end)  
 button.MouseButton1Up:Connect(function()  
 	button:TweenSize(UDim2.new(0, 100, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)  
-end)
+end)  
 
 -- ドラッグ機能追加
 local UserInputService = game:GetService("UserInputService")
