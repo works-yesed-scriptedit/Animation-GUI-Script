@@ -1,4 +1,4 @@
--- Animation GUI（優先順位ドロップダウン付き / KRNL対応）
+-- Animation GUI（優先順位ドロップダウン付き / KRNL対応 / 最小化&削除ボタン）
 
 -- GUIの親をCoreGuiに設定
 local CoreGui = game:GetService("CoreGui")
@@ -9,8 +9,6 @@ local old = CoreGui:FindFirstChild(guiName)
 if old then old:Destroy() end
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 local function getCharacter()
@@ -40,32 +38,9 @@ frame.AnchorPoint = Vector2.new(1, 0)
 frame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
-
--- ドラッグ（スムーズ版）
-local dragging = false
-local dragStart, startPos
-
-frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = UserInputService:GetMouseLocation()
-		startPos = frame.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-RunService.RenderStepped:Connect(function()
-	if dragging and dragStart and startPos then
-		local delta = UserInputService:GetMouseLocation() - dragStart
-		local goal = startPos + UDim2.new(0, delta.X, 0, delta.Y)
-		frame:TweenPosition(goal, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
-	end
-end)
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
@@ -97,9 +72,7 @@ dropdown.TextScaled = true
 dropdown.Font = Enum.Font.SourceSans
 Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 6)
 
-local priorityOrder = {
-	"Core", "Idle", "Movement", "Action", "Action2", "Action3", "Action4"
-}
+local priorityOrder = { "Core", "Idle", "Movement", "Action", "Action2", "Action3", "Action4" }
 local currentPriority = Enum.AnimationPriority.Action4
 local priorityMap = {
 	Core = Enum.AnimationPriority.Core,
@@ -111,7 +84,6 @@ local priorityMap = {
 	Action4 = Enum.AnimationPriority.Action4
 }
 
--- ドロップダウンリスト（右側表示）
 local dropdownFrame = Instance.new("Frame")
 dropdownFrame.Size = UDim2.new(0, 100, 0, 25 * #priorityOrder)
 dropdownFrame.Position = UDim2.new(0, 10 + dropdown.AbsoluteSize.X + 10, 0, 70)
@@ -153,7 +125,6 @@ button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 button.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
 
--- アニメーション再生処理
 local playingAnim
 
 button.MouseButton1Click:Connect(function()
@@ -186,10 +157,49 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ボタン押下アニメーション
 button.MouseButton1Down:Connect(function()
 	button:TweenSize(UDim2.new(0, 90, 0, 27), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
 end)
 button.MouseButton1Up:Connect(function()
 	button:TweenSize(UDim2.new(0, 100, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+end)
+
+-- 最小化＆削除ボタン
+local minimizeButton = Instance.new("TextButton", frame)
+minimizeButton.Size = UDim2.new(0, 25, 0, 25)
+minimizeButton.Position = UDim2.new(1, -60, 0, 2)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.new(1, 1, 1)
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.TextScaled = true
+Instance.new("UICorner", minimizeButton).CornerRadius = UDim.new(0, 4)
+
+local closeButton = Instance.new("TextButton", frame)
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -30, 0, 2)
+closeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+closeButton.Text = "×"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextScaled = true
+Instance.new("UICorner", closeButton).CornerRadius = UDim.new(0, 4)
+
+-- 最小化処理
+local TweenService = game:GetService("TweenService")
+local isMinimized = false
+local originalSize = frame.Size
+
+minimizeButton.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	minimizeButton.Text = isMinimized and "+" or "-"
+
+	local goalSize = isMinimized and UDim2.new(0, 250, 0, 35) or originalSize
+	local tween = TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = goalSize })
+	tween:Play()
+end)
+
+-- 削除処理
+closeButton.MouseButton1Click:Connect(function()
+	gui:Destroy()
 end)
