@@ -1,8 +1,10 @@
 -- Animation GUI（優先順位ドロップダウン付き / KRNL対応）
 
+-- GUIの親をCoreGuiに設定
 local CoreGui = game:GetService("CoreGui")
 local guiName = "AnimationGUI"
 
+-- 再実行時は削除
 local old = CoreGui:FindFirstChild(guiName)
 if old then old:Destroy() end
 
@@ -30,7 +32,7 @@ gui.IgnoreGuiInset = false
 gui.Parent = CoreGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 200)
+frame.Size = UDim2.new(0, 250, 0, 160)
 frame.Position = UDim2.new(1, -260, 0, 10)
 frame.AnchorPoint = Vector2.new(1, 0)
 frame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
@@ -38,7 +40,6 @@ frame.BorderSizePixel = 0
 frame.Parent = gui
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
--- タイトルラベル（ドラッグに使用）
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
@@ -46,40 +47,52 @@ title.Text = "Animation GUI"
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.new(1, 1, 1)
+title.Parent = frame
 
--- 閉じる＆最小化
-local close = Instance.new("TextButton", frame)
-close.Size = UDim2.new(0, 30, 0, 30)
-close.Position = UDim2.new(1, -35, 0, 0)
-close.Text = "×"
-close.TextScaled = true
-close.Font = Enum.Font.SourceSansBold
-close.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-close.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
-close.MouseButton1Click:Connect(function() gui:Destroy() end)
-
-local minimize = Instance.new("TextButton", frame)
-minimize.Size = UDim2.new(0, 30, 0, 30)
-minimize.Position = UDim2.new(1, -70, 0, 0)
-minimize.Text = "-"
-minimize.TextScaled = true
-minimize.Font = Enum.Font.SourceSansBold
-minimize.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-minimize.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", minimize).CornerRadius = UDim.new(0, 6)
-
-local minimized = false
-minimize.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	for _, child in ipairs(frame:GetChildren()) do
-		if child ~= title and child ~= close and child ~= minimize then
-			child.Visible = not minimized
-		end
-	end
+-- 閉じるボタン（×）
+local closeButton = Instance.new("TextButton", frame)
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -30, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+closeButton.Text = "×"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.TextScaled = true
+closeButton.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", closeButton).CornerRadius = UDim.new(0, 6)
+closeButton.MouseButton1Click:Connect(function()
+	gui:Destroy()
 end)
 
--- テキストボックス（黒半透明）
+-- 最小化ボタン（－）
+local minimizeButton = Instance.new("TextButton", frame)
+minimizeButton.Size = UDim2.new(0, 25, 0, 25)
+minimizeButton.Position = UDim2.new(1, -60, 0, 5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 200, 80)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.new(1, 1, 1)
+minimizeButton.TextScaled = true
+minimizeButton.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", minimizeButton).CornerRadius = UDim.new(0, 6)
+
+local isMinimized = false
+local childrenToToggle = {}
+
+-- 最小化対象（タイトルとボタン以外）
+for _, child in ipairs(frame:GetChildren()) do
+	if child:IsA("GuiObject") and child ~= title and child ~= closeButton and child ~= minimizeButton then
+		table.insert(childrenToToggle, child)
+	end
+end
+
+minimizeButton.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	for _, child in ipairs(childrenToToggle) do
+		child.Visible = not isMinimized
+	end
+	minimizeButton.Text = isMinimized and "+" or "-"
+end)
+
+-- アニメーションID入力欄
 local input = Instance.new("TextBox", frame)
 input.Size = UDim2.new(1, -20, 0, 30)
 input.Position = UDim2.new(0, 10, 0, 35)
@@ -87,21 +100,18 @@ input.PlaceholderText = "アニメーションID"
 input.Text = ""
 input.TextScaled = true
 input.Font = Enum.Font.SourceSans
-input.BackgroundColor3 = Color3.new(0, 0, 0)
-input.BackgroundTransparency = 0.4
-input.TextColor3 = Color3.new(1, 1, 1)
-input.TextTransparency = 0.2
+input.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+input.TextColor3 = Color3.new(0, 0, 0)
+input.Parent = frame
 Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
 
--- ドロップダウン本体
+-- 優先順位ドロップダウン（右側に表示）
 local dropdown = Instance.new("TextButton", frame)
-dropdown.Size = UDim2.new(1, -140, 0, 25)
+dropdown.Size = UDim2.new(0, 120, 0, 25)
 dropdown.Position = UDim2.new(0, 10, 0, 70)
 dropdown.Text = "優先順位: Action4"
-dropdown.BackgroundColor3 = Color3.new(0, 0, 0)
-dropdown.BackgroundTransparency = 0.4
-dropdown.TextColor3 = Color3.new(1, 1, 1)
-dropdown.TextTransparency = 0.2
+dropdown.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+dropdown.TextColor3 = Color3.new(0, 0, 0)
 dropdown.TextScaled = true
 dropdown.Font = Enum.Font.SourceSans
 Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 6)
@@ -120,12 +130,11 @@ local priorityMap = {
 	Action4 = Enum.AnimationPriority.Action4
 }
 
--- ドロップダウンリスト（黒半透明）
+-- ドロップダウンリスト
 local dropdownFrame = Instance.new("Frame", frame)
-dropdownFrame.Size = UDim2.new(0, 100, 0, 25 * #priorityOrder)
-dropdownFrame.Position = UDim2.new(0, 120, 0, 70)
-dropdownFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-dropdownFrame.BackgroundTransparency = 0.4
+dropdownFrame.Size = UDim2.new(0, 120, 0, 25 * #priorityOrder)
+dropdownFrame.Position = UDim2.new(0, 140, 0, 70)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
 dropdownFrame.Visible = false
 dropdownFrame.ClipsDescendants = true
 Instance.new("UICorner", dropdownFrame).CornerRadius = UDim.new(0, 6)
@@ -135,10 +144,8 @@ for i, name in ipairs(priorityOrder) do
 	option.Size = UDim2.new(1, 0, 0, 25)
 	option.Position = UDim2.new(0, 0, 0, (i - 1) * 25)
 	option.Text = name
-	option.BackgroundColor3 = Color3.new(0, 0, 0)
-	option.BackgroundTransparency = 0.4
-	option.TextColor3 = Color3.new(1, 1, 1)
-	option.TextTransparency = 0.2
+	option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	option.TextColor3 = Color3.new(0, 0, 0)
 	option.TextScaled = true
 	option.Font = Enum.Font.SourceSans
 	option.MouseButton1Click:Connect(function()
@@ -165,6 +172,7 @@ Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
 
 -- アニメーション再生処理
 local playingAnim
+
 button.MouseButton1Click:Connect(function()
 	local id = tonumber(input.Text)
 	if not id then
@@ -201,33 +209,4 @@ button.MouseButton1Down:Connect(function()
 end)
 button.MouseButton1Up:Connect(function()
 	button:TweenSize(UDim2.new(0, 100, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
-end)
-
--- ドラッグ機能
-local dragging, dragInput, dragStart, startPos
-title.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-title.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
-	end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
 end)
