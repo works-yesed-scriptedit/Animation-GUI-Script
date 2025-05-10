@@ -1,3 +1,4 @@
+print("起動した")
 -- Animation GUI（優先順位ドロップダウン付き / KRNL対応）  
 
 -- GUIの親をCoreGuiに設定  
@@ -169,17 +170,20 @@ button.MouseButton1Up:Connect(function()
 	button:TweenSize(UDim2.new(0, 100, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)  
 end)  
 
--- ドラッグ機能追加
+-- タイトルバーをドラッグ可能にする
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
-local dragInput, dragStart, startPos
+local dragStart
+local startPos
+
+title.Active = true
+title.Selectable = true
 
 title.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true
 		dragStart = input.Position
 		startPos = frame.Position
-
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
 				dragging = false
@@ -189,14 +193,8 @@ title.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
 		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-title.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
 	end
 end)
