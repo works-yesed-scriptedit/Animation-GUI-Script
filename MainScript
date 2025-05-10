@@ -1,4 +1,4 @@
--- Animation GUI（優先順位ドロップダウン付き / KRNL対応 / ドラッグ機能）
+-- Animation GUI（優先順位ドロップダウン付き / KRNL対応）
 
 -- GUIの親をCoreGuiに設定
 local CoreGui = game:GetService("CoreGui")
@@ -9,6 +9,8 @@ local old = CoreGui:FindFirstChild(guiName)
 if old then old:Destroy() end
 
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 local function getCharacter()
@@ -38,9 +40,32 @@ frame.AnchorPoint = Vector2.new(1, 0)
 frame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
-frame.Active = true -- ドラッグ有効化に必要
-frame.Draggable = true -- ドラッグ可能
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+-- ドラッグ（スムーズ版）
+local dragging = false
+local dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = UserInputService:GetMouseLocation()
+		startPos = frame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if dragging and dragStart and startPos then
+		local delta = UserInputService:GetMouseLocation() - dragStart
+		local goal = startPos + UDim2.new(0, delta.X, 0, delta.Y)
+		frame:TweenPosition(goal, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+	end
+end)
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
@@ -49,7 +74,6 @@ title.Text = "Animation GUI"
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.new(1, 1, 1)
-title.Parent = frame
 
 local input = Instance.new("TextBox", frame)
 input.Size = UDim2.new(1, -20, 0, 30)
@@ -60,7 +84,6 @@ input.TextScaled = true
 input.Font = Enum.Font.SourceSans
 input.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 input.TextColor3 = Color3.new(0, 0, 0)
-input.Parent = frame
 Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
 
 -- 優先順位ドロップダウン
