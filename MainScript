@@ -1,0 +1,233 @@
+-- Animation GUI（優先順位ドロップダウン付き / KRNL対応）
+
+local CoreGui = game:GetService("CoreGui")
+local guiName = "AnimationGUI"
+
+local old = CoreGui:FindFirstChild(guiName)
+if old then old:Destroy() end
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function getCharacter()
+	local char = player.Character
+	if not char or not char:FindFirstChild("Humanoid") then
+		player.CharacterAdded:Wait()
+		char = player.Character
+	end
+	return char
+end
+
+local character = getCharacter()
+local humanoid = character:WaitForChild("Humanoid")
+local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+
+-- GUI作成
+local gui = Instance.new("ScreenGui")
+gui.Name = guiName
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = false
+gui.Parent = CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 200)
+frame.Position = UDim2.new(1, -260, 0, 10)
+frame.AnchorPoint = Vector2.new(1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+-- タイトルラベル（ドラッグに使用）
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Animation GUI"
+title.TextScaled = true
+title.Font = Enum.Font.SourceSansBold
+title.TextColor3 = Color3.new(1, 1, 1)
+
+-- 閉じる＆最小化
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 0)
+close.Text = "×"
+close.TextScaled = true
+close.Font = Enum.Font.SourceSansBold
+close.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+close.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(0, 30, 0, 30)
+minimize.Position = UDim2.new(1, -70, 0, 0)
+minimize.Text = "-"
+minimize.TextScaled = true
+minimize.Font = Enum.Font.SourceSansBold
+minimize.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+minimize.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", minimize).CornerRadius = UDim.new(0, 6)
+
+local minimized = false
+minimize.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	for _, child in ipairs(frame:GetChildren()) do
+		if child ~= title and child ~= close and child ~= minimize then
+			child.Visible = not minimized
+		end
+	end
+end)
+
+-- テキストボックス（黒半透明）
+local input = Instance.new("TextBox", frame)
+input.Size = UDim2.new(1, -20, 0, 30)
+input.Position = UDim2.new(0, 10, 0, 35)
+input.PlaceholderText = "アニメーションID"
+input.Text = ""
+input.TextScaled = true
+input.Font = Enum.Font.SourceSans
+input.BackgroundColor3 = Color3.new(0, 0, 0)
+input.BackgroundTransparency = 0.4
+input.TextColor3 = Color3.new(1, 1, 1)
+input.TextTransparency = 0.2
+Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
+
+-- ドロップダウン本体
+local dropdown = Instance.new("TextButton", frame)
+dropdown.Size = UDim2.new(1, -140, 0, 25)
+dropdown.Position = UDim2.new(0, 10, 0, 70)
+dropdown.Text = "優先順位: Action4"
+dropdown.BackgroundColor3 = Color3.new(0, 0, 0)
+dropdown.BackgroundTransparency = 0.4
+dropdown.TextColor3 = Color3.new(1, 1, 1)
+dropdown.TextTransparency = 0.2
+dropdown.TextScaled = true
+dropdown.Font = Enum.Font.SourceSans
+Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 6)
+
+local priorityOrder = {
+	"Core", "Idle", "Movement", "Action", "Action2", "Action3", "Action4"
+}
+local currentPriority = Enum.AnimationPriority.Action4
+local priorityMap = {
+	Core = Enum.AnimationPriority.Core,
+	Idle = Enum.AnimationPriority.Idle,
+	Movement = Enum.AnimationPriority.Movement,
+	Action = Enum.AnimationPriority.Action,
+	Action2 = Enum.AnimationPriority.Action2,
+	Action3 = Enum.AnimationPriority.Action3,
+	Action4 = Enum.AnimationPriority.Action4
+}
+
+-- ドロップダウンリスト（黒半透明）
+local dropdownFrame = Instance.new("Frame", frame)
+dropdownFrame.Size = UDim2.new(0, 100, 0, 25 * #priorityOrder)
+dropdownFrame.Position = UDim2.new(0, 120, 0, 70)
+dropdownFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+dropdownFrame.BackgroundTransparency = 0.4
+dropdownFrame.Visible = false
+dropdownFrame.ClipsDescendants = true
+Instance.new("UICorner", dropdownFrame).CornerRadius = UDim.new(0, 6)
+
+for i, name in ipairs(priorityOrder) do
+	local option = Instance.new("TextButton", dropdownFrame)
+	option.Size = UDim2.new(1, 0, 0, 25)
+	option.Position = UDim2.new(0, 0, 0, (i - 1) * 25)
+	option.Text = name
+	option.BackgroundColor3 = Color3.new(0, 0, 0)
+	option.BackgroundTransparency = 0.4
+	option.TextColor3 = Color3.new(1, 1, 1)
+	option.TextTransparency = 0.2
+	option.TextScaled = true
+	option.Font = Enum.Font.SourceSans
+	option.MouseButton1Click:Connect(function()
+		currentPriority = priorityMap[name]
+		dropdown.Text = "優先順位: " .. name
+		dropdownFrame.Visible = false
+	end)
+end
+
+dropdown.MouseButton1Click:Connect(function()
+	dropdownFrame.Visible = not dropdownFrame.Visible
+end)
+
+-- 再生ボタン
+local button = Instance.new("TextButton", frame)
+button.Size = UDim2.new(0, 100, 0, 30)
+button.Position = UDim2.new(0.5, -50, 1, -35)
+button.Text = "再生"
+button.TextScaled = true
+button.Font = Enum.Font.SourceSansBold
+button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+button.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
+
+-- アニメーション再生処理
+local playingAnim
+button.MouseButton1Click:Connect(function()
+	local id = tonumber(input.Text)
+	if not id then
+		warn("無効なIDが入力されました")
+		return
+	end
+
+	if playingAnim then
+		playingAnim:Stop()
+		playingAnim = nil
+		button.Text = "再生"
+		warn("アニメーションを停止しました")
+	else
+		local anim = Instance.new("Animation")
+		anim.AnimationId = "rbxassetid://" .. id
+		local success, animationTrack = pcall(function()
+			return animator:LoadAnimation(anim)
+		end)
+		if success and animationTrack then
+			animationTrack.Priority = currentPriority
+			playingAnim = animationTrack
+			playingAnim:Play()
+			button.Text = "停止"
+			warn("アニメーションを再生しました: " .. anim.AnimationId .. " 優先度: " .. tostring(currentPriority))
+		else
+			warn("アニメーションの読み込みに失敗しました")
+		end
+	end
+end)
+
+-- ボタン押下アニメーション
+button.MouseButton1Down:Connect(function()
+	button:TweenSize(UDim2.new(0, 90, 0, 27), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+end)
+button.MouseButton1Up:Connect(function()
+	button:TweenSize(UDim2.new(0, 100, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+end)
+
+-- ドラッグ機能
+local dragging, dragInput, dragStart, startPos
+title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+title.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
