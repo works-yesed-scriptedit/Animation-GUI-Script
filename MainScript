@@ -1,4 +1,4 @@
--- Animation GUI（KRNL対応）
+-- Animation GUI（KRNL対応,修正前）
 
 -- GUIの親をCoreGuiに設定
 local CoreGui = game:GetService("CoreGui")
