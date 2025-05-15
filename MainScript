@@ -214,3 +214,17 @@ end)
 closeButton.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
+
+-- キャラクターがリスポーンしたときの処理
+player.CharacterAdded:Connect(function(char)
+	char:WaitForChild("Humanoid")
+	humanoid = char:FindFirstChild("Humanoid")
+	animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+
+	-- アニメーション再生中なら停止
+	if playingAnim then
+		playingAnim:Stop()
+		playingAnim = nil
+		button.Text = "再生"
+	end
+end)
